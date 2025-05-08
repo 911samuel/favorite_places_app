@@ -1,4 +1,8 @@
+import 'dart:convert';
+
+import 'package:favorite_places_app/models/place.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:location/location.dart';
 
 class LocationInput extends StatefulWidget {
@@ -9,8 +13,17 @@ class LocationInput extends StatefulWidget {
 }
 
 class _LocationInputState extends State<LocationInput> {
-  Location? _pickedLocation;
+  PlaceLocation? _pickedLocation;
   bool _isGettingLocation = false;
+
+  String get locationImage {
+    if (_pickedLocation == null) {
+      return '';
+    }
+    final lat = _pickedLocation!.latitude;
+    final long = _pickedLocation!.longitude;
+    return 'https://maps.googleapis.com/maps/api/staticmap?center=$lat,$long&zoom=13&size=600x300&maptype=roadmap&markers=color:red%7Clabel:A%7C$lat,$long&key=AIzaSyAwJ-1_H1jxEUx18zwVDKIrDHi0_yMOpXI';
+  }
 
   void _getCurrentLocation() async {
     Location location = Location();
@@ -40,8 +53,25 @@ class _LocationInputState extends State<LocationInput> {
     });
 
     locationData = await location.getLocation();
+    final lat = locationData.latitude;
+    final long = locationData.longitude;
+    if (lat == null || long == null) {
+      return;
+    }
+    final url = Uri.parse(
+      'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$long&key=AIzaSyAwJ-1_H1jxEUx18zwVDKIrDHi0_yMOpXI',
+    );
+
+    final response = await http.get(url);
+    final resData = json.decode(response.body);
+    final address = resData['results'][0]['formatted_address'];
 
     setState(() {
+      _pickedLocation = PlaceLocation(
+        latitude: lat,
+        longitude: long,
+        address: address,
+      );
       _isGettingLocation = false;
     });
   }
@@ -55,6 +85,15 @@ class _LocationInputState extends State<LocationInput> {
       ),
       textAlign: TextAlign.center,
     );
+
+    if (_pickedLocation != null) {
+      content = Image.network(
+        locationImage,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
 
     if (_isGettingLocation) {
       content = CircularProgressIndicator();
@@ -78,7 +117,6 @@ class _LocationInputState extends State<LocationInput> {
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-
           children: [
             TextButton.icon(
               onPressed: _getCurrentLocation,

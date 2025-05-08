@@ -39,6 +39,10 @@ dependencies:
   flutter_riverpod: ^2.6.1
   image_picker: ^1.1.2
   location: ^8.0.0
+  geocoding: ^3.0.0
+  flutter_latlong: ^1.0.3
+  flutter_map: ^8.1.1
+  http: ^1.4.0
 
 dev_dependencies:
   flutter_test:
